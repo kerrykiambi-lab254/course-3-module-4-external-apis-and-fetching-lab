@@ -2,88 +2,56 @@
 const weatherApi = "https://api.weather.gov/alerts/active?area="
 
 // Your code here!
-async function getWeatherAlerts(stateAbbr) {
-    const errorMessage = document.getElementById('error-message');
-    const displayDiv = document.getElementById('alerts-display');
+document.addEventListener("DOMContentLoaded", function () {
+  const weatherApi = "https://api.weather.gov/alerts/active?area=";
+  const btnFetch = document.getElementById("fetch-alerts");
+  const alertDiv = document.getElementById("alerts-display");
+  const errorDiv = document.getElementById("error-message");
 
-    try {
-        // FIX: Added backticks for the fetch URL
-        const response = await fetch(`${weatherApi}${stateAbbr}`);
-        
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
+  btnFetch.addEventListener("click", () => {
+    const stateTxt = document.getElementById("state-input");
+    const state = stateTxt.value.trim();
 
-        const data = await response.json();
+    stateTxt.value = "";
 
-        // Success: Clear and hide error message
-        errorMessage.textContent = "";
-        errorMessage.classList.add('hidden');
-
-        displayAlerts(data);
-    } catch (error) {
-        displayError(error.message);
+    if (state.length === 2 && state === state.toUpperCase()) {
+      fetchWeatherAlerts(state);
+    } else {
+      displayError("Invalid Input");
     }
-}
+  });
 
-function displayAlerts(data) {
-    const alertsDisplay = document.getElementById('alerts-display');
-    alertsDisplay.innerHTML = "";
+  function fetchWeatherAlerts(state) {
+    fetch(weatherApi + state)
+      .then((response) => response.json())
+      .then((data) => displayAlerts(data))
+      .catch((error) => displayError(error.message));
+  }
 
-    // FIX: Hardcoded "Weather Alerts" to match the test's expected string
-    const count = data.features ? data.features.length : 0;
-    const summary = document.createElement("h2");
-    
-    // FIX: Added backticks here
-    summary.textContent = `Weather Alerts: ${count}`;
-    alertsDisplay.appendChild(summary);
+  function displayAlerts(data) {
+    alertDiv.innerHTML = "";
+    errorDiv.classList.add("hidden");
+    errorDiv.innerHTML = "";
 
-    const list = document.createElement("ul");
-    if (data.features) {
-        data.features.forEach(alert => {
-            const li = document.createElement("li");
-            li.textContent = alert.properties.headline;
-            list.appendChild(li);
-        });
-    }
-    alertsDisplay.appendChild(list);
-}
+    const count = data.features.length;
 
-function displayError(message) {
-    const errorMessage = document.getElementById('error-message');
-    const alertsDisplay = document.getElementById('alerts-display');
+    const headerTitle = document.createElement("h3");
+    const headerCount = document.createElement("h3");
+     headerTitle.textContent = data.title;
+    headerCount.textContent = `Weather Alerts: ${count}`;
+    alertDiv.appendChild(headerTitle);
+    alertDiv.appendChild(headerCount);
 
-    alertsDisplay.innerHTML = "";
-    errorMessage.textContent = message;
-    errorMessage.classList.remove('hidden');
-}
+    data.features.forEach((item) => {
+      const p = document.createElement("p");
+      p.textContent = item.properties.headline;
+      alertDiv.appendChild(p);
+    });
+  }
 
-function initializeApp() {
-    const fetchButton = document.getElementById('fetch-button');
-    const stateInput = document.getElementById('state-input');
-
-    if (fetchButton && stateInput) {
-        fetchButton.addEventListener('click', () => {
-            const stateAbbr = stateInput.value.trim().toUpperCase();
-
-            // Clear input immediately to satisfy the "Input clearing" test
-            stateInput.value = "";
-            
-            if (stateAbbr) {
-                getWeatherAlerts(stateAbbr);
-            } else {
-                displayError("Please enter a state abbreviation.");
-            }
-        });
-    }
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
-
-if (typeof module !== "undefined") {
-    module.exports = { getWeatherAlerts, displayAlerts, displayError };
-}
+  function displayError(message) {
+    alertDiv.innerHTML = "";
+    errorDiv.classList.remove("hidden");
+    errorDiv.textContent = message;
+  }
+});
